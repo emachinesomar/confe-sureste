@@ -423,7 +423,8 @@
             const submitButton = form.querySelector('.submit-button');
             
             // *** ¡IMPORTANTE! REEMPLAZA ESTA URL CON LA URL DE TU NUEVA IMPLEMENTACIÓN DE APPS SCRIPT ***
-            const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwk5ZwSds9dpL7JE7bNwCyfwzvvGr7c2GssMHToLT-rz-bbp4h6PbuwPa7nwiK0J3f1Q/exec'; 
+            // La URL debe ser la que termina en /exec de tu script.
+            const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuagCoNCbwhfa_VmMKADnxpvF-c650ZEWuYEKQ9s7wA0vcxC4tBa2tcI4zogeB3eR46A/exec'; 
 
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -444,7 +445,7 @@
                     // 2. Envío de datos mediante POST
                     const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                         method: 'POST',
-                        // Este Content-Type es crucial para que Apps Script lea e.parameter
+                        // Este Content-Type es CRUCIAL para que Apps Script lea e.parameter
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded' 
                         },
@@ -459,13 +460,13 @@
                         form.reset();
                         clearAllErrors();
                     } else {
-                        // Muestra el mensaje de error de Apps Script (ej: campos obligatorios faltantes)
+                        // Muestra el mensaje de error de Apps Script 
                         showToast(result.message || 'Error al enviar la inscripción. Revise la consola.', 'error');
                     }
                 } catch (error) {
                     console.error('Error de red, CORS o parsing de JSON:', error);
-                    // Muestra un error genérico si hay problemas de red o la URL es incorrecta
-                    showToast('Error de conexión. Asegúrese de que la URL de Apps Script es correcta.', 'error');
+                    // Este es el error que persiste al probar en 127.0.0.1
+                    showToast('Error de conexión. Prueba desde un dominio público (Vercel/Netlify).', 'error');
                 } finally {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Enviar Inscripción';
