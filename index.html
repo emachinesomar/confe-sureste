@@ -423,10 +423,10 @@
             const submitButton = form.querySelector('.submit-button');
             
             // *** ¡IMPORTANTE! REEMPLAZA ESTA URL CON LA URL DE TU NUEVA IMPLEMENTACIÓN DE APPS SCRIPT ***
-            // La URL debe ser la que termina en /exec de tu script.
+            // La URL debe ser la que termina en /exec de tu script.            
             const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuagCoNCbwhfa_VmMKADnxpvF-c650ZEWuYEKQ9s7wA0vcxC4tBa2tcI4zogeB3eR46A/exec'; 
 
-            form.addEventListener('submit', async function(e) {
+             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 // 1. Validación básica del formulario
@@ -452,21 +452,42 @@
                         body: postBody 
                     });
 
-                    // 3. Procesamiento de la respuesta (se espera JSON de Apps Script)
-                    const result = await response.json();
+                    // 3. PROCESAMIENTO ROBUSTO DE LA RESPUESTA
+                    // Leemos la respuesta como texto para poder manejar errores de parseo
+                    const textResponse = await response.text();
+                    let result;
+                    
+                    try {
+                        // Intentamos parsear el JSON
+                        result = JSON.parse(textResponse);
+                    } catch (parseError) {
+                        // Si falla el parseo, Google Apps Script probablemente devolvió una página de error HTML (¡el error que ves!)
+                        console.error('Error de parseo JSON. Respuesta completa:', textResponse);
+                        throw new Error('Respuesta inválida. El script de Google no devolvió JSON. Revisa el registro de Apps Script.');
+                    }
+
 
                     if (response.ok && result.success) {
                         showToast(result.message, 'success');
                         form.reset();
                         clearAllErrors();
                     } else {
-                        // Muestra el mensaje de error de Apps Script 
-                        showToast(result.message || 'Error al enviar la inscripción. Revise la consola.', 'error');
+                        // Muestra el mensaje de error de Apps Script (ej: 'Faltan campos obligatorios')
+                        showToast(result.message || 'Error en el script. Revise la consola del script.', 'error');
                     }
                 } catch (error) {
-                    console.error('Error de red, CORS o parsing de JSON:', error);
-                    // Este es el error que persiste al probar en 127.0.0.1
-                    showToast('Error de conexión. Prueba desde un dominio público (Vercel/Netlify).', 'error');
+                    console.error('Error durante el envío del formulario:', error);
+                    
+                    // Manejo específico del error reportado
+                    if (error.message.includes('Respuesta inválida')) {
+                        showToast('Error de respuesta: El script no devolvió JSON válido. (Datos guardados, pero mensaje de error).', 'error');
+                    } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+                         // Esto cubre fallos de CORS, especialmente en localhost (127.0.0.1)
+                        showToast('Error de conexión o CORS. Asegúrate de probar desde un dominio público si estás en Chrome/Firefox.', 'error');
+                    } else {
+                        showToast(`Fallo al enviar: ${error.message}`, 'error');
+                    }
+
                 } finally {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Enviar Inscripción';
